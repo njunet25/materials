@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab2 Example Page</title>
+    <link rel="stylesheet" href="./style.css">
+    <!-- <link rel="modulepreload" href="./js/main.js"> -->
+    <!-- <link rel="modulepreload" href="./js/jquery.js"> -->
+</head>
+<body>
+    <main>
+        <h1>Example Page</h1>
+
+        <p class="gallery-hint">Click an image to view it fullscreen.</p>
+
+        <section class="gallery" aria-label="Nature photo gallery">
+            <img src="./images/nature-01.webp" alt="Road winding through a red rock canyon" width="1200" height="675">
+            <img src="./images/nature-02.webp" alt="Sunlight passing through a green forest" width="1200" height="675">
+            <img src="./images/nature-03.webp" alt="Hiker standing on a mountain ridge" width="1200" height="675">
+            <img src="./images/nature-04.webp" alt="Mountain lake with a wooden cabin" width="1200" height="675">
+            <img src="./images/nature-05.webp" alt="Boats crossing a turquoise alpine lake" width="1200" height="675">
+            <img src="./images/nature-06.webp" alt="Snowy peaks rising above the clouds" width="1200" height="675">
+            <img src="./images/nature-07.webp" alt="Waterfall surrounded by green trees" width="1200" height="675">
+            <img src="./images/nature-08.webp" alt="Quiet tropical beach at sunset" width="1200" height="675">
+        </section>
+    </main>
+
+    <div id="viewer" class="viewer" role="dialog" aria-label="Fullscreen image viewer" aria-hidden="true">
+        <img id="viewer-image" alt="">
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>
