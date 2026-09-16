@@ -12,11 +12,15 @@ import { parseArgs } from 'node:util';
 const { values: options } = parseArgs({
   options: {
     http2: { type: 'boolean', default: false },
+    'no-keep-alive': { type: 'boolean', default: false },
     key: { type: 'string' },
     cert: { type: 'string' },
   },
 });
 
+if (options.http2 && options['no-keep-alive']) {
+  throw new Error('--no-keep-alive cannot be used with --http2');
+}
 if (options.http2 && (!options.key || !options.cert)) {
   throw new Error('HTTP/2 requires --key <key.pem> and --cert <cert.pem>');
 }
@@ -133,6 +137,10 @@ async function findStaticFile(url) {
 
 async function handleRequest(req, res) {
   try {
+    if (options['no-keep-alive']) {
+      res.setHeader('connection', 'close');
+    }
+
     await delay(REQUEST_DELAY_MS);
 
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -201,4 +209,7 @@ server.listen(PORT, HOST, () => {
   console.log(
     `${protocol} static server listening on ${scheme}://${host}:${port}`,
   );
+  if (options['no-keep-alive']) {
+    console.log('HTTP/1.1 keep-alive disabled: closing each connection after its response');
+  }
 });
