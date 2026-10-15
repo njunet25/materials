@@ -14,11 +14,8 @@ SEC("struct_ops")
 __u32 BPF_PROG(bpf_cc_ssthresh, struct sock *sk)
 {
     const struct tcp_sock *tp = tcp_sk(sk);
-    __u32 cwnd = cc_get_cwnd(tp);
-    __u32 ssthresh = cwnd / 2;
-    if (ssthresh < 10)
-        ssthresh = 10;
-    return ssthresh;
+    (void)tp;
+    return 2;
 }
 
 SEC("struct_ops")
@@ -31,17 +28,9 @@ void BPF_PROG(bpf_cc_cong_avoid, struct sock *sk, __u32 ack, __u32 acked)
     (void)ack;
 
     if (cwnd < ssthresh) {
-        cwnd += acked;
-        cc_set_cwnd(tp, cwnd);
+        /* TODO: 实验一填写慢启动 */
     } else {
-        __u32 cnt = cc_get_cwnd_cnt(tp);
-        cnt += acked;
-        if (cnt >= cwnd) {
-            cnt -= cwnd;
-            cwnd += 1;
-            cc_set_cwnd(tp, cwnd);
-        }
-        cc_set_cwnd_cnt(tp, cnt);
+        /* TODO: 实验一填写拥塞避免 */
     }
 }
 
