@@ -57,8 +57,8 @@ def setup_network(ns1, ns2, veth0=None, veth1=None):
     ns_create(ns1)
     ns_create(ns2)
     suffix = str(os.getpid())
-    veth0 = veth0 or "ta" + suffix
-    veth1 = veth1 or "tb" + suffix
+    veth0 = veth0 or "veth_a"
+    veth1 = veth1 or "veth_b"
     run_command("ip", "link", "add", veth0, "type", "veth", "peer", "name", veth1)
     for ns, dev, addr in ((ns1, veth0, "192.0.2.1/24"),
                           (ns2, veth1, "192.0.2.2/24")):
@@ -280,7 +280,7 @@ def run_tests(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("exe_path", nargs="?", default="./talker")
+    parser.add_argument("exe_path", nargs="?", default="./build/talker")
     parser.add_argument("--a-offset", type=int, default=0,
                         help="A recv_seq - B send_seq (default: 0)")
     parser.add_argument("--b-offset", type=int, default=0,
