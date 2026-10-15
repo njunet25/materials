@@ -1,0 +1,5 @@
+build/
+vmlinux.h
+*.o
+*.json
+*.csv
