@@ -3,6 +3,7 @@ import subprocess
 import sys
 import time
 import os
+import re
 
 def run(cmd, check=True):
     print(f"[RUN] {cmd}")
@@ -18,7 +19,7 @@ def main():
     print("=== Starting NAT64 Test Suite ===")
     
     if not os.path.exists("./scripts/setup_netns.sh"):
-        print("[ERROR] Please run this script from the lab6-dev directory.")
+        print("[ERROR] Please run this script from the lab6 directory.")
         sys.exit(1)
 
     run("sudo ./scripts/setup_netns.sh")
@@ -27,34 +28,51 @@ def main():
     run("sudo ip netns exec ns_gateway ./nat64 > /tmp/nat64.log 2>&1 &")
     time.sleep(2)
 
-    # 在 ns_server 上启动 tcpdump，抓取是否有转换后的 IPv4 包到达
-    print("[INFO] Starting tcpdump on ns_server...")
-    run("sudo ip netns exec ns_server tcpdump -i veth-server -n ip > /tmp/server_capture.log 2>&1 &")
+    print("[INFO] Starting tcpdump on ns_server (Hex mode)...")
+    run("sudo ip netns exec ns_server tcpdump -i veth-server -n -X -c 2 > /tmp/server_capture.log 2>&1 &")
     time.sleep(1)
 
     target = "64:ff9b::6440:0002"
     print(f"[INFO] Pinging {target} from ns_client...")
-    run(f"sudo ip netns exec ns_client ping -6 -c 4 -W 2 {target}", check=False)
+    run(f"sudo ip netns exec ns_client ping -6 -c 2 -W 2 {target}", check=False)
 
     time.sleep(1)
     run("sudo pkill tcpdump", check=False)
 
-    print("[INFO] Checking server capture...")
+    print("\n=== Gateway Console Output (NAT64 Log) ===")
+    print(run("cat /tmp/nat64.log", check=False))
+
+    print("=== Server Capture Analysis (Hacker Mode) ===")
     capture_out = run("cat /tmp/server_capture.log", check=False)
     
-    if "100.64.0.1 > 100.64.0.2" not in capture_out:
-        print("\n[FAIL] NAT64 translation failed. Packet did not reach ns_server.")
-        print("=== Server Capture ===")
-        print(capture_out)
+    hex_blocks = re.findall(r'0x([0-9a-fA-F]{4}):\s+((?:[0-9a-fA-F]{4}\s+)+)', capture_out)
+    
+    parsed = False
+    for addr, data in hex_blocks:
+        hex_str = data.replace(' ', '')
+        raw_bytes = bytes.fromhex(hex_str)
+        if len(raw_bytes) >= 20 and raw_bytes[0] == 0x45:
+            print(f"\033[1;36m[+] Captured IPv4 Packet on ns_server!\033[0m")
+            print(f"    Version: {raw_bytes[0] >> 4}")
+            print(f"    Header Length: {(raw_bytes[0] & 0x0F) * 4} bytes")
+            print(f"    Total Length: {int.from_bytes(raw_bytes[2:4], 'big')} bytes")
+            print(f"    TTL: {raw_bytes[8]}")
+            print(f"    Protocol: {raw_bytes[9]} (58 = ICMPv6, 6 = TCP, 17 = UDP)")
+            src_ip = ".".join(str(b) for b in raw_bytes[12:16])
+            dst_ip = ".".join(str(b) for b in raw_bytes[16:20])
+            print(f"    Source IP: {src_ip}")
+            print(f"    Dest IP:   {dst_ip}")
+            parsed = True
+            break
+
+    if not parsed or "100.64.0.1 > 100.64.0.2" not in capture_out:
+        print("\n[FAIL] NAT64 translation failed. Packet did not reach ns_server correctly.")
         print("Check /tmp/nat64.log for debug info.")
         run("sudo pkill -f './nat64'", check=False)
         run("sudo ./scripts/cleanup_netns.sh", check=False)
         sys.exit(1)
 
     print("\n[PASS] NAT64 translation works. Packet successfully reached ns_server.")
-    print("=== Server Capture (IPv4 header converted) ===")
-    print(capture_out)
-    
     run("sudo pkill -f './nat64'", check=False)
     run("sudo ./scripts/cleanup_netns.sh", check=False)
     print("=== ALL TESTS PASSED ===")
