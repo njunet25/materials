@@ -55,7 +55,7 @@ for ns in lab5-r1 lab5-r2; do
     ip netns exec "$ns" sysctl -qw net.ipv6.conf.all.forwarding=1
 done
 
-# Keep PMTU learning ICMP-based rather than masking the challenge by TCP probing.
+# Keep PMTU learning ICMP-based for the observation experiments.
 for ns in lab5-c lab5-s; do
     ip netns exec "$ns" sysctl -qw net.ipv4.tcp_mtu_probing=0
 done
